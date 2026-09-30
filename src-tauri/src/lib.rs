@@ -1,3 +1,5 @@
+mod credentials;
+
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -82,7 +84,13 @@ pub fn run() {
             app.global_shortcut().register(shortcut)?;
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![greet, capture_screen])
+        .invoke_handler(tauri::generate_handler![
+            greet,
+            capture_screen,
+            credentials::has_gemini_api_key,
+            credentials::set_gemini_api_key,
+            credentials::clear_gemini_api_key
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

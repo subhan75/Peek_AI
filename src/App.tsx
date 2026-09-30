@@ -2,12 +2,15 @@ import { useEffect, useState } from "react";
 import reactLogo from "./assets/react.svg";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import SettingsModal from "./components/SettingsModal";
 import "./App.css";
 
 function App() {
   const [greetMsg, setGreetMsg] = useState("");
   const [name, setName] = useState("");
   const [captureActive, setCaptureActive] = useState(false);
+  const [hasApiKey, setHasApiKey] = useState<boolean | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [screenshotDataUrl, setScreenshotDataUrl] = useState<string | null>(null);
   const [captureDimensions, setCaptureDimensions] = useState<{ width: number; height: number } | null>(null);
   const [captureLatencyMs, setCaptureLatencyMs] = useState<number | null>(null);
@@ -49,6 +52,19 @@ function App() {
   }
 
   useEffect(() => {
+    invoke<boolean>("has_gemini_api_key")
+      .then((exists) => {
+        setHasApiKey(exists);
+        if (!exists) {
+          setSettingsOpen(true);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to check for stored API key:", err);
+      });
+  }, []);
+
+  useEffect(() => {
     const unlisten = listen("toggle-capture", () => {
       setCaptureActive((prev) => {
         const next = !prev;
@@ -66,7 +82,23 @@ function App() {
 
   return (
     <main className="container">
+      <SettingsModal
+        open={settingsOpen}
+        canDismiss={hasApiKey === true}
+        onClose={() => setSettingsOpen(false)}
+        onSaved={() => {
+          setHasApiKey(true);
+          setSettingsOpen(false);
+        }}
+      />
+
       <h1>Welcome to Tauri + React</h1>
+
+      <div className="row" style={{ justifyContent: "flex-end" }}>
+        <button type="button" onClick={() => setSettingsOpen(true)}>
+          ⚙ Settings {hasApiKey ? "(key configured)" : "(no key set)"}
+        </button>
+      </div>
 
       <p style={{ fontWeight: "bold", color: captureActive ? "limegreen" : "gray" }}>
         Hotkey (Ctrl+Space) state: {captureActive ? "ACTIVE" : "inactive"}
