@@ -8,6 +8,28 @@ plus visual annotations (rings/boxes/arrows/underlines) drawn directly on screen
 > `GetForegroundWindow`, Windows Credential Manager) and is not portable to
 > macOS/Linux as-is — see [ARCHITECTURE.md](ARCHITECTURE.md) for why.
 
+## Screenshots
+
+**Main window** — after a hotkey capture: the screenshot, a cursor-centered
+detail crop, and the capture-latency breakdown.
+
+![Main window showing the latest capture](docs/screenshots/Main.jpeg)
+
+**Query panel** — asking a question about the capture and getting back a
+plain-text answer plus the raw annotation coordinates.
+
+![Query panel with a question and answer](docs/screenshots/Main2.jpeg)
+
+**Overlay in action** — annotations drawn directly over the real screen,
+with the draggable chat card showing the answer.
+
+![Transparent overlay annotating multiple on-screen subjects](docs/screenshots/Cars.jpeg)
+
+**Overlay, single annotation** — a focused example pointing out one
+on-screen subject.
+
+![Transparent overlay annotating a single on-screen subject](docs/screenshots/Porsche.jpeg)
+
 ## Prerequisites
 
 - **Windows 10/11**
