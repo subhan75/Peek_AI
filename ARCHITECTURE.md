@@ -1,6 +1,6 @@
 # Architecture
 
-This document explains how Screen Aware Assistant is put together: the
+This document explains how PeekAI is put together: the
 process/window model, the end-to-end request flow, and the non-obvious design
 decisions that exist because of real bugs hit during development. For setup
 instructions see [README.md](README.md).

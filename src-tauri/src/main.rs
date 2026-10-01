@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    screen_aware_assistant_lib::run()
+    peek_ai_lib::run()
 }

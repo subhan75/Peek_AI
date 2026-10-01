@@ -1,4 +1,4 @@
-# Screen Aware Assistant
+# PeekAI
 
 A Windows desktop app (Tauri + React/TypeScript + Rust) that lets you hotkey-capture
 your screen, ask a question about what's on it, and get back a spoken-language answer

@@ -1,6 +1,6 @@
 use keyring::Entry;
 
-const SERVICE_NAME: &str = "screen-aware-assistant";
+const SERVICE_NAME: &str = "peek-ai";
 const GEMINI_KEY_USERNAME: &str = "gemini-api-key";
 
 fn gemini_entry() -> Result<Entry, String> {

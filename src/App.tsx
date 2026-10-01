@@ -103,7 +103,7 @@ function App() {
         }}
       />
 
-      <h1>Screen Aware Assistant</h1>
+      <h1>PeekAI</h1>
 
       <div className="row" style={{ justifyContent: "flex-end" }}>
         <button type="button" onClick={() => setSettingsOpen(true)}>
