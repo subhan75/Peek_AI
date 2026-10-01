@@ -24,7 +24,7 @@ plus visual annotations (rings/boxes/arrows/underlines) drawn directly on screen
 
 ```sh
 git clone <this-repo-url>
-cd Video_to_3D
+cd <cloned-folder-name>
 npm install
 npm run tauri dev
 ```
