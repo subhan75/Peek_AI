@@ -5,12 +5,6 @@ mod overlay;
 mod privacy;
 mod vlm;
 
-// Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-#[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
-}
-
 #[derive(serde::Serialize)]
 struct CaptureResult {
     image_base64: String,
@@ -248,7 +242,6 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            greet,
             capture_screen,
             credentials::has_gemini_api_key,
             credentials::set_gemini_api_key,

@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import reactLogo from "./assets/react.svg";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import SettingsModal from "./components/SettingsModal";
@@ -7,8 +6,6 @@ import QueryPanel from "./components/QueryPanel";
 import "./App.css";
 
 function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
   const [captureActive, setCaptureActive] = useState(false);
   const [hasApiKey, setHasApiKey] = useState<boolean | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -27,11 +24,6 @@ function App() {
     base64Ms: number;
   } | null>(null);
   const [captureError, setCaptureError] = useState<string | null>(null);
-
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    setGreetMsg(await invoke("greet", { name }));
-  }
 
   async function runCapture() {
     setCaptureError(null);
@@ -111,7 +103,7 @@ function App() {
         }}
       />
 
-      <h1>Welcome to Tauri + React</h1>
+      <h1>Screen Aware Assistant</h1>
 
       <div className="row" style={{ justifyContent: "flex-end" }}>
         <button type="button" onClick={() => setSettingsOpen(true)}>
@@ -124,7 +116,7 @@ function App() {
       </p>
 
       <div style={{ border: "1px solid #444", padding: "1rem", margin: "1rem 0", textAlign: "left" }}>
-        <h3>Debug: Screen Capture (Phase 2)</h3>
+        <h3>Latest capture</h3>
         {captureError && <p style={{ color: "tomato" }}>Capture failed: {captureError}</p>}
         {captureLatencyMs !== null && (
           <p>
@@ -174,35 +166,6 @@ function App() {
         cursorYFrac={cursorYFrac}
         appId={appId}
       />
-
-      <div className="row">
-        <a href="https://vite.dev" target="_blank">
-          <img src="/vite.svg" className="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img src="/tauri.svg" className="logo tauri" alt="Tauri logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <p>Click on the Tauri, Vite, and React logos to learn more.</p>
-
-      <form
-        className="row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          greet();
-        }}
-      >
-        <input
-          id="greet-input"
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
-        />
-        <button type="submit">Greet</button>
-      </form>
-      <p>{greetMsg}</p>
     </main>
   );
 }
