@@ -12,9 +12,25 @@
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "Screen Aware Assistant",
         "width": 800,
         "height": 600
+      },
+      {
+        "label": "overlay",
+        "create": false,
+        "url": "index.html",
+        "width": 800,
+        "height": 600,
+        "transparent": true,
+        "decorations": false,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "shadow": false,
+        "resizable": false,
+        "visible": false,
+        "focus": false
       }
     ],
     "security": {

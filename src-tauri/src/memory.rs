@@ -8,6 +8,11 @@ const MAX_TURNS_PER_APP: usize = 10;
 struct ConversationTurn {
     query: String,
     answer: String,
+    /// The previous turn's raw annotations, verbatim as Gemini produced them
+    /// (JSON array, box_2d still in its native 0-1000 space) -- echoed back
+    /// so a follow-up about the same subject can reuse these exact
+    /// coordinates instead of re-deriving (and drifting from) them.
+    annotations_json: String,
 }
 
 #[derive(Default)]
@@ -21,15 +26,24 @@ impl ConversationStore {
         };
         turns
             .iter()
-            .map(|t| format!("User: {}\nAssistant: {}", t.query, t.answer))
+            .map(|t| {
+                if t.annotations_json == "[]" {
+                    format!("User: {}\nAssistant: {}", t.query, t.answer)
+                } else {
+                    format!(
+                        "User: {}\nAssistant: {}\nAssistant's annotations for that answer (box_2d in 0-1000 screen coordinates): {}",
+                        t.query, t.answer, t.annotations_json
+                    )
+                }
+            })
             .collect::<Vec<_>>()
             .join("\n\n")
     }
 
-    pub fn push_turn(&self, app_id: &str, query: String, answer: String) {
+    pub fn push_turn(&self, app_id: &str, query: String, answer: String, annotations_json: String) {
         let mut store = self.0.lock().unwrap();
         let turns = store.entry(app_id.to_string()).or_default();
-        turns.push_back(ConversationTurn { query, answer });
+        turns.push_back(ConversationTurn { query, answer, annotations_json });
         while turns.len() > MAX_TURNS_PER_APP {
             turns.pop_front();
         }

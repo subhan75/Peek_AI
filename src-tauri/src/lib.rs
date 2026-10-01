@@ -1,6 +1,7 @@
 mod credentials;
 mod foreground;
 mod memory;
+mod overlay;
 mod privacy;
 mod vlm;
 
@@ -25,7 +26,7 @@ struct CaptureResult {
 }
 
 /// Global mouse cursor position, in physical screen pixels.
-fn cursor_position() -> Option<(i32, i32)> {
+pub(crate) fn cursor_position() -> Option<(i32, i32)> {
     use windows_sys::Win32::Foundation::POINT;
     use windows_sys::Win32::UI::WindowsAndMessaging::GetCursorPos;
 
@@ -148,6 +149,50 @@ fn capture_screen() -> Result<CaptureResult, String> {
     })
 }
 
+/// Click-through (`set_ignore_cursor_events(true)`) stops the overlay
+/// webview from receiving mouse events at all, so it can't detect its own
+/// hover via DOM events -- this polls the real OS cursor position instead
+/// and flips click-through off only while the cursor is over the chat
+/// card's last-reported rect (see overlay::set_overlay_hitbox).
+fn spawn_overlay_cursor_poll(app: tauri::AppHandle) {
+    use std::time::Duration;
+    use tauri::Manager;
+
+    std::thread::spawn(move || {
+        let mut last_ignore: Option<bool> = None;
+        loop {
+            std::thread::sleep(Duration::from_millis(33));
+
+            let Some(window) = app.get_webview_window(overlay::OVERLAY_LABEL) else {
+                continue;
+            };
+            if !window.is_visible().unwrap_or(false) {
+                continue;
+            }
+
+            let state = app.state::<overlay::OverlayState>();
+            if state.is_dragging() {
+                continue;
+            }
+
+            let inside = match (cursor_position(), state.hitbox()) {
+                (Some((cx, cy)), Some((x, y, w, h))) => {
+                    let cx = cx as f64;
+                    let cy = cy as f64;
+                    cx >= x && cx <= x + w && cy >= y && cy <= y + h
+                }
+                _ => false,
+            };
+
+            let desired_ignore = !inside;
+            if last_ignore != Some(desired_ignore) {
+                let _ = window.set_ignore_cursor_events(desired_ignore);
+                last_ignore = Some(desired_ignore);
+            }
+        }
+    });
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     use tauri::Emitter;
@@ -155,6 +200,7 @@ pub fn run() {
 
     tauri::Builder::default()
         .manage(memory::ConversationStore::default())
+        .manage(overlay::OverlayState::default())
         .plugin(tauri_plugin_opener::init())
         .plugin(
             tauri_plugin_global_shortcut::Builder::new()
@@ -171,6 +217,7 @@ pub fn run() {
                 Code::Space,
             );
             app.global_shortcut().register(shortcut)?;
+            spawn_overlay_cursor_poll(app.handle().clone());
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -179,7 +226,14 @@ pub fn run() {
             credentials::has_gemini_api_key,
             credentials::set_gemini_api_key,
             credentials::clear_gemini_api_key,
-            vlm::analyze_screenshot
+            vlm::analyze_screenshot,
+            overlay::show_overlay,
+            overlay::hide_overlay,
+            overlay::get_overlay_payload,
+            overlay::set_overlay_hitbox,
+            overlay::clear_overlay_hitbox,
+            overlay::begin_overlay_drag,
+            overlay::end_overlay_drag
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -40,6 +40,7 @@ function QueryPanel({ imageBase64, cropBase64, cursorXFrac, cursorYFrac, appId }
       });
       setLatencyMs(performance.now() - start);
       setResponse(result);
+      await invoke("show_overlay", { payload: { query, response: result } });
     } catch (err) {
       setError(String(err));
     } finally {

@@ -1,0 +1,88 @@
+html,
+body,
+#root {
+  background: transparent !important;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.overlay-root {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+.annotation {
+  position: absolute;
+  pointer-events: none;
+}
+
+.annotation-box {
+  border: 3px solid #4da3ff;
+  border-radius: 4px;
+  box-shadow: 0 0 10px rgba(77, 163, 255, 0.8);
+}
+
+.annotation-ring {
+  border: 3px solid #4da3ff;
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(77, 163, 255, 0.8);
+}
+
+.annotation-arrow {
+  border: 3px dashed #ffb84d;
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(255, 184, 77, 0.8);
+}
+
+.annotation-underline {
+  height: 3px;
+  background: #4da3ff;
+  box-shadow: 0 0 8px rgba(77, 163, 255, 0.8);
+}
+
+.chat-card {
+  position: fixed;
+  width: min(90vw, 480px);
+  background: rgba(20, 20, 20, 0.92);
+  color: #f2f2f2;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  padding: 16px 18px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  pointer-events: auto;
+  font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
+}
+
+.chat-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 8px;
+  font-size: 0.9em;
+  color: #aaa;
+  cursor: move;
+  touch-action: none;
+}
+
+.chat-card-header button {
+  background: none;
+  border: none;
+  color: #aaa;
+  font-size: 1.2em;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0;
+}
+
+.chat-card-header button:hover {
+  color: #fff;
+}
+
+.chat-card-text {
+  margin: 0;
+  white-space: pre-wrap;
+  line-height: 1.4;
+}

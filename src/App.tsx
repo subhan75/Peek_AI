@@ -87,6 +87,8 @@ function App() {
         const next = !prev;
         if (next) {
           void runCapture();
+        } else {
+          void invoke("hide_overlay");
         }
         return next;
       });

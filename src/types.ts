@@ -11,3 +11,8 @@ export interface VlmResponse {
   text: string;
   annotations: Annotation[];
 }
+
+export interface OverlayPayload {
+  query: string;
+  response: VlmResponse;
+}

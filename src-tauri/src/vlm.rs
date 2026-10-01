@@ -27,7 +27,7 @@ const GEMINI_INTERACTIONS_ENDPOINT: &str = "https://generativelanguage.googleapi
 /// xmax], each normalized to 0-1000. Annotations are a secondary, optional
 /// part of the response -- the primary goal is a good actionable "text"
 /// answer, not pixel-perfect pointing.
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 struct RawAnnotation {
     #[serde(rename = "type")]
     annotation_type: String,
@@ -118,6 +118,15 @@ fn build_prompt(query: &str, has_crop: bool, cursor: Option<(f64, f64)>, history
             "Here is the recent conversation history in this app, for context if the question \
             below is a follow-up (e.g. \"and the second one?\"):\n{history}\n\n"
         ));
+        prompt.push_str(
+            "This history is only extra context -- it does not make you any less certain about \
+            what's on screen right now. If this follow-up question has an identifiable on-screen \
+            answer, annotate it just as confidently as you would for a first question; being a \
+            follow-up is not by itself a reason to leave \"annotations\" empty. If a previous turn \
+            above includes annotations and this follow-up is still about that same on-screen \
+            subject, reuse its exact box_2d coordinates verbatim instead of re-deriving new ones \
+            -- only compute a new box_2d if the follow-up clearly points at a different location.\n\n",
+        );
     }
 
     if let Some((cx, cy)) = cursor {
@@ -256,8 +265,15 @@ pub async fn analyze_screenshot(
     let raw: RawVlmResponse = serde_json::from_str(output_text)
         .map_err(|e| format!("Could not parse Gemini's structured answer: {e}"))?;
 
+    println!(
+        "[vlm] history_present={} annotations={}",
+        !history_text.is_empty(),
+        raw.annotations.len()
+    );
+
     if let Some(id) = app_id.as_deref() {
-        history.push_turn(id, query.clone(), raw.text.clone());
+        let annotations_json = serde_json::to_string(&raw.annotations).unwrap_or_else(|_| "[]".to_string());
+        history.push_turn(id, query.clone(), raw.text.clone(), annotations_json);
     }
 
     Ok(VlmResponse {
