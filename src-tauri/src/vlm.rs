@@ -158,7 +158,14 @@ fn build_prompt(query: &str, has_crop: bool, cursor: Option<(f64, f64)>, history
         the panel on the left\", \"the icon next to the search box at the top of that panel\", \
         \"right-click inside the empty space below the file list\"), and what to expect to happen, \
         referencing the actual labels, icons, menu names, or panel names visible in the \
-        screenshot(s). Prefer concrete step-by-step instructions over vague descriptions. In \
+        screenshot(s). Prefer concrete step-by-step instructions over vague descriptions. \
+        \n\nWrite \"text\" as plain prose only -- it is displayed as-is in a plain-text UI, with no \
+        markdown rendering. Do NOT use any markdown or special formatting: no **bold**, no \
+        *italics*, no numbered or bulleted lists, no headers, no backticks. If you're describing \
+        multiple items, weave them into flowing sentences instead of a list. Do not add \
+        disclaimers, meta-commentary, or notes about anything other than what the question asked \
+        about (e.g. don't comment on other thumbnails, other images, or things the user didn't ask \
+        about) -- just answer the question directly and concisely, in plain sentences.\n\nIn \
         \"annotations\", optionally list a small number of on-screen locations that are directly \
         relevant to the steps you described, each with a \"box_2d\" field: [ymin, xmin, ymax, \
         xmax], each an integer from 0 to 1000, normalized against the full screen (the first \
