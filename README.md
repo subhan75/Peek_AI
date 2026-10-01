@@ -4,18 +4,41 @@ A Windows desktop app (Tauri + React/TypeScript + Rust) that lets you hotkey-cap
 your screen, ask a question about what's on it, and get back a spoken-language answer
 plus visual annotations (rings/boxes/arrows/underlines) drawn directly on screen.
 
-## Running it
+> **Windows only.** The backend calls Win32 APIs directly (`GetCursorPos`,
+> `GetForegroundWindow`, Windows Credential Manager) and is not portable to
+> macOS/Linux as-is — see [ARCHITECTURE.md](ARCHITECTURE.md) for why.
+
+## Prerequisites
+
+- **Windows 10/11**
+- **[Node.js](https://nodejs.org/) 20+** and npm
+- **[Rust](https://rustup.rs/)** (stable toolchain) via rustup
+- **Tauri's native build tools**: the Microsoft C++ Build Tools ("Desktop
+  development with C++" workload in Visual Studio Installer) and the WebView2
+  Runtime (preinstalled on most Windows 10/11 machines). Full list:
+  [tauri.app/start/prerequisites](https://tauri.app/start/prerequisites/)
+- A **Gemini API key** — create one for free at
+  [aistudio.google.com/apikey](https://aistudio.google.com/apikey)
+
+## Setup
 
 ```sh
+git clone <this-repo-url>
+cd Video_to_3D
 npm install
 npm run tauri dev
 ```
 
-On first launch you'll be asked for a Gemini API key (stored in the Windows Credential
-Manager, never written to a config file). Press **Ctrl+Space** from any app to capture
-the screen and open the query panel.
+The first `npm run tauri dev` will take a while (compiling the Rust
+dependency tree); subsequent runs are fast. On first launch the app prompts
+for your Gemini API key — it's stored in the Windows Credential Manager, not
+in a `.env` file or any project file, so there is nothing else to configure.
+Press **Ctrl+Space** from any app to capture the screen and open the query
+panel.
 
 ## How it works
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the full breakdown. Short version:
 
 ```
 Global hotkey (Rust: tauri-plugin-global-shortcut)
