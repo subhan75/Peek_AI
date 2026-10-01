@@ -18,6 +18,7 @@ function App() {
   const [cropBase64, setCropBase64] = useState<string | null>(null);
   const [cursorXFrac, setCursorXFrac] = useState<number | null>(null);
   const [cursorYFrac, setCursorYFrac] = useState<number | null>(null);
+  const [appId, setAppId] = useState<string | null>(null);
   const [captureDimensions, setCaptureDimensions] = useState<{ width: number; height: number } | null>(null);
   const [captureLatencyMs, setCaptureLatencyMs] = useState<number | null>(null);
   const [captureBreakdown, setCaptureBreakdown] = useState<{
@@ -46,6 +47,7 @@ function App() {
         crop_base64: string | null;
         cursor_x_frac: number | null;
         cursor_y_frac: number | null;
+        app_id: string | null;
       }>("capture_screen");
       setCaptureLatencyMs(performance.now() - start);
       setCaptureBreakdown({
@@ -60,6 +62,7 @@ function App() {
       setCropDataUrl(result.crop_base64 ? `data:image/png;base64,${result.crop_base64}` : null);
       setCursorXFrac(result.cursor_x_frac);
       setCursorYFrac(result.cursor_y_frac);
+      setAppId(result.app_id);
     } catch (err) {
       setCaptureError(String(err));
     }
@@ -167,6 +170,7 @@ function App() {
         cropBase64={cropBase64}
         cursorXFrac={cursorXFrac}
         cursorYFrac={cursorYFrac}
+        appId={appId}
       />
 
       <div className="row">

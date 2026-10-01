@@ -7,9 +7,10 @@ interface QueryPanelProps {
   cropBase64?: string | null;
   cursorXFrac?: number | null;
   cursorYFrac?: number | null;
+  appId?: string | null;
 }
 
-function QueryPanel({ imageBase64, cropBase64, cursorXFrac, cursorYFrac }: QueryPanelProps) {
+function QueryPanel({ imageBase64, cropBase64, cursorXFrac, cursorYFrac, appId }: QueryPanelProps) {
   const [query, setQuery] = useState("");
   const [analyzing, setAnalyzing] = useState(false);
   const [response, setResponse] = useState<VlmResponse | null>(null);
@@ -35,6 +36,7 @@ function QueryPanel({ imageBase64, cropBase64, cursorXFrac, cursorYFrac }: Query
         cropBase64: cropBase64 ?? null,
         cursorXFrac: cursorXFrac ?? null,
         cursorYFrac: cursorYFrac ?? null,
+        appId: appId ?? null,
       });
       setLatencyMs(performance.now() - start);
       setResponse(result);

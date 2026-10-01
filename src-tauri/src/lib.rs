@@ -1,4 +1,7 @@
 mod credentials;
+mod foreground;
+mod memory;
+mod privacy;
 mod vlm;
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
@@ -18,6 +21,7 @@ struct CaptureResult {
     crop_base64: Option<String>,
     cursor_x_frac: Option<f64>,
     cursor_y_frac: Option<f64>,
+    app_id: Option<String>,
 }
 
 /// Global mouse cursor position, in physical screen pixels.
@@ -85,6 +89,17 @@ fn capture_screen() -> Result<CaptureResult, String> {
     use base64::Engine;
     use std::time::Instant;
 
+    let privacy_check = privacy::check_foreground_window();
+    if privacy_check.blocked {
+        return Err(format!(
+            "Capture blocked: {}. Screen capture was skipped to protect your privacy.",
+            privacy_check.reason.unwrap_or_else(|| "the active window looks sensitive".to_string())
+        ));
+    }
+    let app_id = foreground::foreground_window()
+        .map(|w| if w.process_name.is_empty() { w.title } else { w.process_name })
+        .filter(|id| !id.is_empty());
+
     let monitors = xcap::Monitor::all().map_err(|e| e.to_string())?;
     let monitor = monitors
         .into_iter()
@@ -113,9 +128,10 @@ fn capture_screen() -> Result<CaptureResult, String> {
     let crop_base64 = cursor_frac.and_then(|frac| cursor_crop_base64(&image, frac));
 
     println!(
-        "[capture_screen] capture={capture_ms:.1}ms encode={encode_ms:.1}ms base64={encode_bytes_ms:.1}ms png_bytes={} cursor={:?}",
+        "[capture_screen] capture={capture_ms:.1}ms encode={encode_ms:.1}ms base64={encode_bytes_ms:.1}ms png_bytes={} cursor={:?} app_id={:?}",
         png_bytes.len(),
-        cursor_frac
+        cursor_frac,
+        app_id
     );
 
     Ok(CaptureResult {
@@ -128,6 +144,7 @@ fn capture_screen() -> Result<CaptureResult, String> {
         crop_base64,
         cursor_x_frac: cursor_frac.map(|(x, _)| x),
         cursor_y_frac: cursor_frac.map(|(_, y)| y),
+        app_id,
     })
 }
 
@@ -137,6 +154,7 @@ pub fn run() {
     use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, ShortcutState};
 
     tauri::Builder::default()
+        .manage(memory::ConversationStore::default())
         .plugin(tauri_plugin_opener::init())
         .plugin(
             tauri_plugin_global_shortcut::Builder::new()

@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 
 use crate::credentials::get_gemini_api_key;
+use crate::memory::ConversationStore;
 
 static HTTP_CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
 
@@ -105,12 +106,19 @@ fn response_schema() -> serde_json::Value {
     })
 }
 
-fn build_prompt(query: &str, has_crop: bool, cursor: Option<(f64, f64)>) -> String {
+fn build_prompt(query: &str, has_crop: bool, cursor: Option<(f64, f64)>, history: &str) -> String {
     let mut prompt = String::new();
     prompt.push_str(
         "You are a screen-side assistant that watches the user's screen and helps them figure \
         out what to do next. Look at the attached screenshot(s) and answer the user's question.\n\n",
     );
+
+    if !history.is_empty() {
+        prompt.push_str(&format!(
+            "Here is the recent conversation history in this app, for context if the question \
+            below is a follow-up (e.g. \"and the second one?\"):\n{history}\n\n"
+        ));
+    }
 
     if let Some((cx, cy)) = cursor {
         prompt.push_str(&format!(
@@ -171,6 +179,8 @@ pub async fn analyze_screenshot(
     crop_base64: Option<String>,
     cursor_x_frac: Option<f64>,
     cursor_y_frac: Option<f64>,
+    app_id: Option<String>,
+    history: tauri::State<'_, ConversationStore>,
 ) -> Result<VlmResponse, String> {
     let api_key = get_gemini_api_key()
         .map_err(|_| "No Gemini API key configured. Open Settings to add one.".to_string())?;
@@ -180,7 +190,12 @@ pub async fn analyze_screenshot(
         _ => None,
     };
 
-    let prompt_text = build_prompt(&query, crop_base64.is_some(), cursor);
+    let history_text = app_id
+        .as_deref()
+        .map(|id| history.history_text(id))
+        .unwrap_or_default();
+
+    let prompt_text = build_prompt(&query, crop_base64.is_some(), cursor, &history_text);
     let mut input = vec![
         json!({ "type": "text", "text": prompt_text }),
         json!({ "type": "image", "data": image_base64, "mime_type": "image/png" }),
@@ -240,6 +255,10 @@ pub async fn analyze_screenshot(
 
     let raw: RawVlmResponse = serde_json::from_str(output_text)
         .map_err(|e| format!("Could not parse Gemini's structured answer: {e}"))?;
+
+    if let Some(id) = app_id.as_deref() {
+        history.push_turn(id, query.clone(), raw.text.clone());
+    }
 
     Ok(VlmResponse {
         text: raw.text,
