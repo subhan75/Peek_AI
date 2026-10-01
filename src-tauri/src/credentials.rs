@@ -33,10 +33,9 @@ pub fn clear_gemini_api_key() -> Result<(), String> {
     }
 }
 
-/// Backend-only accessor for outgoing Gemini requests (wired up in Phase 4).
+/// Backend-only accessor for outgoing Gemini requests (used by vlm.rs).
 /// Deliberately not registered as a Tauri command, so the raw key value
 /// never crosses the IPC bridge to the frontend.
-#[allow(dead_code)]
 pub fn get_gemini_api_key() -> Result<String, String> {
     gemini_entry()?.get_password().map_err(|e| match e {
         keyring::Error::NoEntry => "No Gemini API key configured".to_string(),

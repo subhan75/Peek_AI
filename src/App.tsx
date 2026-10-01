@@ -3,6 +3,7 @@ import reactLogo from "./assets/react.svg";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import SettingsModal from "./components/SettingsModal";
+import QueryPanel from "./components/QueryPanel";
 import "./App.css";
 
 function App() {
@@ -12,6 +13,11 @@ function App() {
   const [hasApiKey, setHasApiKey] = useState<boolean | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [screenshotDataUrl, setScreenshotDataUrl] = useState<string | null>(null);
+  const [screenshotBase64, setScreenshotBase64] = useState<string | null>(null);
+  const [cropDataUrl, setCropDataUrl] = useState<string | null>(null);
+  const [cropBase64, setCropBase64] = useState<string | null>(null);
+  const [cursorXFrac, setCursorXFrac] = useState<number | null>(null);
+  const [cursorYFrac, setCursorYFrac] = useState<number | null>(null);
   const [captureDimensions, setCaptureDimensions] = useState<{ width: number; height: number } | null>(null);
   const [captureLatencyMs, setCaptureLatencyMs] = useState<number | null>(null);
   const [captureBreakdown, setCaptureBreakdown] = useState<{
@@ -37,6 +43,9 @@ function App() {
         capture_ms: number;
         encode_ms: number;
         encode_bytes_ms: number;
+        crop_base64: string | null;
+        cursor_x_frac: number | null;
+        cursor_y_frac: number | null;
       }>("capture_screen");
       setCaptureLatencyMs(performance.now() - start);
       setCaptureBreakdown({
@@ -46,6 +55,11 @@ function App() {
       });
       setCaptureDimensions({ width: result.width, height: result.height });
       setScreenshotDataUrl(`data:image/png;base64,${result.image_base64}`);
+      setScreenshotBase64(result.image_base64);
+      setCropBase64(result.crop_base64);
+      setCropDataUrl(result.crop_base64 ? `data:image/png;base64,${result.crop_base64}` : null);
+      setCursorXFrac(result.cursor_x_frac);
+      setCursorYFrac(result.cursor_y_frac);
     } catch (err) {
       setCaptureError(String(err));
     }
@@ -129,7 +143,31 @@ function App() {
             style={{ maxWidth: "100%", maxHeight: "300px", border: "1px solid #888" }}
           />
         )}
+        {cursorXFrac !== null && cursorYFrac !== null && (
+          <p style={{ fontSize: "0.85em", color: "#aaa" }}>
+            Cursor at capture time: x={cursorXFrac.toFixed(3)}, y={cursorYFrac.toFixed(3)}
+          </p>
+        )}
+        {cropDataUrl && (
+          <>
+            <p style={{ fontSize: "0.85em", color: "#aaa", marginBottom: "0.25rem" }}>
+              Zoomed crop around cursor (also sent to Gemini):
+            </p>
+            <img
+              src={cropDataUrl}
+              alt="Zoomed crop around cursor"
+              style={{ maxWidth: "250px", border: "1px solid #888" }}
+            />
+          </>
+        )}
       </div>
+
+      <QueryPanel
+        imageBase64={screenshotBase64}
+        cropBase64={cropBase64}
+        cursorXFrac={cursorXFrac}
+        cursorYFrac={cursorYFrac}
+      />
 
       <div className="row">
         <a href="https://vite.dev" target="_blank">

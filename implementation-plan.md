@@ -75,6 +75,17 @@ This plan breaks the PRD's functional requirements (FR-01 through FR-06) into an
 
 ---
 
+## Phase 4.5 — Conversational Memory & Privacy Guard
+
+Two low-cost additions identified by comparing architecture with a similar open-source Windows assistant (Clacky). Both are cheap to add on top of the existing Phase 4 pipeline and don't require any new infrastructure. **Scope stays advisory/read-only** — the assistant still only tells the user what to do; it does not take actions or control the system (no agentic tool-use, no file/system mutation). That stays an explicit non-goal for now.
+
+- **Per-app conversational memory**: keep a short, bounded conversation history (e.g. capped at the last ~20 messages) keyed to the active foreground window/app, so a follow-up question like "and what about the second one?" has context instead of every query being answered from a blank slate. History is in-memory only (not persisted to disk), consistent with the "never persisted" rule already applied to screenshots.
+- **Privacy Guard**: before capturing, check whether the active foreground window looks sensitive (e.g. password managers, banking apps, a configurable denylist by window title/process name) and skip the capture (or warn the user) rather than silently sending that screen content to the VLM provider. This reinforces the PRD's zero-telemetry/privacy-first posture rather than conflicting with it.
+
+**Exit criteria:** a follow-up question correctly uses context from the prior answer in the same app session; capturing while a denylisted/sensitive window is focused is blocked (or explicitly warned) instead of silently sent to the API.
+
+---
+
 ## Phase 5 — Transparent Overlay & Coordinate Drawing Engine (FR-05, FR-06)
 
 - Create the frameless, click-through, always-on-top transparent overlay window (Tauri window config: `transparent: true`, `decorations: false`, `alwaysOnTop: true`, click-through via platform APIs where the user isn't actively interacting with the chat card).
@@ -115,6 +126,8 @@ Derived from the phases above, these are the system's core domain entities:
 10. **Annotation** — a single visual marker: `{ type: ring | arrow | box | underline, coordinates, label? }`.
 11. **OverlayWindow** — the transparent, click-through, always-on-top window's runtime state: visibility, current annotations being rendered, click-through toggling.
 12. **ChatCard** — the answer-display UI element paired with the overlay, holding the current CaptureSession's text answer.
+13. **AppConversationHistory** — in-memory, per-foreground-app message history (bounded, e.g. last ~20 messages) keyed by window/app identity, giving follow-up questions context without persisting anything to disk.
+14. **PrivacyGuard** — a policy check run before capture that flags the current foreground window as sensitive (denylist by title/process name) and blocks or warns instead of silently capturing and sending it to the VLM provider.
 
 ---
 
