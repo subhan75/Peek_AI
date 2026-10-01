@@ -85,6 +85,28 @@ fn cursor_crop_base64(image: &image::RgbaImage, cursor_frac: (f64, f64)) -> Opti
     Some(base64::engine::general_purpose::STANDARD.encode(&crop_bytes))
 }
 
+/// Long-edge cap for the screenshot actually sent to Gemini: keeps the
+/// request payload and PNG-encode time bounded on high-resolution/multi-4K
+/// displays (where a raw capture can run into multiple MB) without losing
+/// enough detail to hurt the model's reading of on-screen text. The cursor
+/// crop is built from the full-resolution capture separately, so fine detail
+/// near the cursor is unaffected by this cap.
+const MAX_VLM_IMAGE_DIMENSION: u32 = 1568;
+
+/// Downscales (never upscales) so the longer edge is at most
+/// MAX_VLM_IMAGE_DIMENSION, preserving aspect ratio.
+fn downscale_for_vlm(image: &image::RgbaImage) -> image::RgbaImage {
+    let (width, height) = (image.width(), image.height());
+    let long_edge = width.max(height);
+    if long_edge <= MAX_VLM_IMAGE_DIMENSION {
+        return image.clone();
+    }
+    let scale = MAX_VLM_IMAGE_DIMENSION as f64 / long_edge as f64;
+    let new_width = ((width as f64 * scale).round() as u32).max(1);
+    let new_height = ((height as f64 * scale).round() as u32).max(1);
+    image::imageops::resize(image, new_width, new_height, image::imageops::FilterType::Triangle)
+}
+
 #[tauri::command]
 fn capture_screen() -> Result<CaptureResult, String> {
     use base64::Engine;
@@ -114,9 +136,15 @@ fn capture_screen() -> Result<CaptureResult, String> {
     let width = image.width();
     let height = image.height();
 
+    // Cursor fraction and the detail crop are computed from the
+    // full-resolution capture, before any downscaling for the VLM payload.
+    let cursor_frac = cursor_fraction_on_monitor(&monitor, width, height);
+    let crop_base64 = cursor_frac.and_then(|frac| cursor_crop_base64(&image, frac));
+
     let encode_start = Instant::now();
+    let vlm_image = downscale_for_vlm(&image);
     let mut png_bytes: Vec<u8> = Vec::new();
-    image
+    vlm_image
         .write_to(&mut std::io::Cursor::new(&mut png_bytes), image::ImageFormat::Png)
         .map_err(|e| e.to_string())?;
     let encode_ms = encode_start.elapsed().as_secs_f64() * 1000.0;
@@ -125,20 +153,19 @@ fn capture_screen() -> Result<CaptureResult, String> {
     let image_base64 = base64::engine::general_purpose::STANDARD.encode(&png_bytes);
     let encode_bytes_ms = b64_start.elapsed().as_secs_f64() * 1000.0;
 
-    let cursor_frac = cursor_fraction_on_monitor(&monitor, width, height);
-    let crop_base64 = cursor_frac.and_then(|frac| cursor_crop_base64(&image, frac));
-
     println!(
-        "[capture_screen] capture={capture_ms:.1}ms encode={encode_ms:.1}ms base64={encode_bytes_ms:.1}ms png_bytes={} cursor={:?} app_id={:?}",
+        "[capture_screen] capture={capture_ms:.1}ms encode={encode_ms:.1}ms base64={encode_bytes_ms:.1}ms png_bytes={} original={width}x{height} sent={}x{} cursor={:?} app_id={:?}",
         png_bytes.len(),
+        vlm_image.width(),
+        vlm_image.height(),
         cursor_frac,
         app_id
     );
 
     Ok(CaptureResult {
         image_base64,
-        width,
-        height,
+        width: vlm_image.width(),
+        height: vlm_image.height(),
         capture_ms,
         encode_ms,
         encode_bytes_ms,

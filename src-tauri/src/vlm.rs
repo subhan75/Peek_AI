@@ -230,7 +230,15 @@ pub async fn analyze_screenshot(
         .json(&body)
         .send()
         .await
-        .map_err(|e| format!("Network error contacting Gemini: {}", describe_error(&e)))?;
+        .map_err(|e| {
+            if e.is_timeout() {
+                "The request to Gemini timed out. Check your network connection and try again.".to_string()
+            } else if e.is_connect() {
+                "Couldn't reach Gemini -- check your internet connection.".to_string()
+            } else {
+                format!("Network error contacting Gemini: {}", describe_error(&e))
+            }
+        })?;
 
     let status = response.status();
     let response_text = response
@@ -243,7 +251,18 @@ pub async fn analyze_screenshot(
             .ok()
             .and_then(|v| v["error"]["message"].as_str().map(|s| s.to_string()))
             .unwrap_or(response_text);
-        return Err(format!("Gemini API error ({status}): {message}"));
+        return Err(match status.as_u16() {
+            401 | 403 => format!(
+                "Your Gemini API key was rejected ({status}): {message}. Open Settings to update it."
+            ),
+            429 => format!(
+                "Gemini rate-limited this request ({status}): {message}. Wait a moment and try again."
+            ),
+            500..=599 => format!(
+                "Gemini's servers are having trouble right now ({status}): {message}. Try again shortly."
+            ),
+            _ => format!("Gemini API error ({status}): {message}"),
+        });
     }
 
     let parsed: serde_json::Value = serde_json::from_str(&response_text)
